@@ -17,26 +17,20 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.db.dependency;
+package org.sonar.alm.client.bitbucketserver;
 
-import javax.annotation.Nullable;
+import com.google.gson.annotations.SerializedName;
 
-public record CveDto(
-  String uuid,
-  String id,
-  String description,
-  @Nullable
-  Double cvssScore,
-  @Nullable
-  Double epssScore,
-  @Nullable
-  Double epssPercentile,
-  @Nullable
-  Long publishedAt,
-  @Nullable
-  Long lastModifiedAt,
-  Long createdAt,
-  Long updatedAt
-) {
+public class BitbucketServerStatus {
 
+  @SerializedName("state")
+  private String state;
+
+  public BitbucketServerStatus() {
+    // http://stackoverflow.com/a/18645370/229031
+  }
+
+  public String getState() {
+    return state;
+  }
 }
