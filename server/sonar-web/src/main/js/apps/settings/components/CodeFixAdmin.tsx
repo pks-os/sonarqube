@@ -23,6 +23,7 @@ import {
   Button,
   ButtonVariety,
   Checkbox,
+  Heading,
   IconCheckCircle,
   IconError,
   LinkStandalone,
@@ -33,17 +34,13 @@ import { MutationStatus } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import React, { useEffect } from 'react';
 import { FormattedMessage } from 'react-intl';
-import {
-  BasicSeparator,
-  HighlightedSection,
-  themeColor,
-  Title,
-  UnorderedList,
-} from '~design-system';
+import { BasicSeparator, HighlightedSection, themeColor, UnorderedList } from '~design-system';
 import { SuggestionServiceStatusCheckResponse } from '../../../api/fix-suggestions';
 import withAvailableFeatures, {
   WithAvailableFeaturesProps,
 } from '../../../app/components/available-features/withAvailableFeatures';
+import DocumentationLink from '../../../components/common/DocumentationLink';
+import { DocLink } from '../../../helpers/doc-links';
 import { translate } from '../../../helpers/l10n';
 import { getAiCodeFixTermsOfServiceUrl } from '../../../helpers/urls';
 import {
@@ -107,7 +104,9 @@ function CodeFixAdmin({ hasFeature }: Readonly<Props>) {
   return (
     <div className="sw-flex">
       <div className="sw-flex-grow sw-p-6">
-        <Title className="sw-heading-md sw-mb-6">{translate('property.codefix.admin.title')}</Title>
+        <Heading as="h2" hasMarginBottom>
+          {translate('property.codefix.admin.title')}
+        </Heading>
         <PromotedSection
           content={
             <>
@@ -168,11 +167,14 @@ function CodeFixAdmin({ hasFeature }: Readonly<Props>) {
       </div>
       <div className="sw-flex-col sw-w-abs-600 sw-p-6">
         <HighlightedSection className="sw-items-start">
-          <Title className="sw-heading-sm sw-mb-6">
+          <Heading as="h3" hasMarginBottom>
             {translate('property.codefix.admin.serviceCheck.title')}
-          </Title>
+          </Heading>
           <p>{translate('property.codefix.admin.serviceCheck.description1')}</p>
-          <p className="sw-mt-4">{translate('property.codefix.admin.serviceCheck.description2')}</p>
+          <DocumentationLink to={DocLink.AiCodeFixEnabling}>
+            {translate('property.codefix.admin.serviceCheck.learnMore')}
+          </DocumentationLink>
+          <p>{translate('property.codefix.admin.serviceCheck.description2')}</p>
           <Button
             className="sw-mt-4"
             variety={ButtonVariety.Default}
