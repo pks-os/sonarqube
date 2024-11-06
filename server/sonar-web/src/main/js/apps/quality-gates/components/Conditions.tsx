@@ -18,6 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { Spinner } from '@sonarsource/echoes-react';
 import { uniqBy } from 'lodash';
 import * as React from 'react';
 import { FormattedMessage } from 'react-intl';
@@ -31,7 +32,6 @@ import {
   LightPrimary,
   Link,
   Note,
-  Spinner,
   SubHeading,
 } from '~design-system';
 import DocHelpTooltip from '~sonar-aligned/components/controls/DocHelpTooltip';
@@ -42,9 +42,16 @@ import { ModalProps } from '../../../components/controls/ModalButton';
 import { DocLink } from '../../../helpers/doc-links';
 import { useDocUrl } from '../../../helpers/docs';
 import { getLocalizedMetricName, translate } from '../../../helpers/l10n';
+import { useStandardExperienceMode } from '../../../queries/settings';
+import { MetricKey } from '../../../sonar-aligned/types/metrics';
 import { Feature } from '../../../types/features';
 import { CaycStatus, Condition as ConditionType, QualityGate } from '../../../types/types';
-import { groupAndSortByPriorityConditions, isQualityGateOptimized } from '../utils';
+import {
+  groupAndSortByPriorityConditions,
+  isQualityGateOptimized,
+  MQR_CONDITIONS_MAP,
+  STANDARD_CONDITIONS_MAP,
+} from '../utils';
 import AddConditionModal from './AddConditionModal';
 import AIGeneratedIcon from './AIGeneratedIcon';
 import CaycCompliantBanner from './CaycCompliantBanner';
@@ -54,6 +61,7 @@ import CaycFixOptimizeBanner from './CaycFixOptimizeBanner';
 import CaycReviewUpdateConditionsModal from './ConditionReviewAndUpdateModal';
 import ConditionsTable from './ConditionsTable';
 import QGRecommendedIcon from './QGRecommendedIcon';
+import UpdateConditionsFromOtherModeBanner from './UpdateConditionsFromOtherModeBanner';
 
 interface Props {
   isFetching?: boolean;
@@ -66,6 +74,7 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
   const [editing, setEditing] = React.useState<boolean>(caycStatus === CaycStatus.NonCompliant);
   const metrics = useMetrics();
   const { hasFeature } = useAvailableFeatures();
+  const { data: isStandardMode, isLoading } = useStandardExperienceMode();
 
   const canEdit = Boolean(actions?.manageConditions);
   const existingConditions = conditions.filter((condition) => metrics[condition.metric]);
@@ -116,10 +125,13 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
     [qualityGate, conditions, metrics, isOptimizing, canEdit],
   );
 
-  return (
-    <div>
-      <CaYCConditionsSimplificationGuide qualityGate={qualityGate} />
+  const conditionsToOtherModeMap = isStandardMode ? MQR_CONDITIONS_MAP : STANDARD_CONDITIONS_MAP;
+  const hasConditionsFromOtherMode =
+    qualityGate[isStandardMode ? 'hasMQRConditions' : 'hasStandardConditions'];
 
+  return (
+    <Spinner isLoading={isLoading}>
+      <CaYCConditionsSimplificationGuide qualityGate={qualityGate} />
       {isBuiltIn && (
         <div className="sw-flex sw-items-center">
           <QGRecommendedIcon className="sw-mr-1" />
@@ -138,7 +150,6 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
           </LightLabel>
         </div>
       )}
-
       {isAICodeAssuranceQualityGate && (
         <div className="sw-flex sw-items-center sw-mt-2">
           <AIGeneratedIcon className="sw-mr-1" />
@@ -157,13 +168,25 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
           </LightLabel>
         </div>
       )}
-
-      {isCompliantCustomQualityGate && !isOptimizing && <CaycCompliantBanner />}
-      {isCompliantCustomQualityGate && isOptimizing && canEdit && (
+      {(!hasConditionsFromOtherMode || !canEdit) &&
+        isCompliantCustomQualityGate &&
+        !isOptimizing && <CaycCompliantBanner />}
+      {!hasConditionsFromOtherMode && isCompliantCustomQualityGate && isOptimizing && canEdit && (
         <CaycFixOptimizeBanner renderCaycModal={renderCaycModal} isOptimizing />
       )}
-      {caycStatus === CaycStatus.NonCompliant && canEdit && (
+      {!hasConditionsFromOtherMode && caycStatus === CaycStatus.NonCompliant && canEdit && (
         <CaycFixOptimizeBanner renderCaycModal={renderCaycModal} />
+      )}
+      {hasConditionsFromOtherMode && canEdit && (
+        <UpdateConditionsFromOtherModeBanner
+          qualityGateName={qualityGate.name}
+          newCodeConditions={newCodeConditions.filter(
+            (c) => conditionsToOtherModeMap[c.metric as MetricKey] !== undefined,
+          )}
+          overallCodeConditions={overallCodeConditions.filter(
+            (c) => conditionsToOtherModeMap[c.metric as MetricKey] !== undefined,
+          )}
+        />
       )}
 
       <header className="sw-flex sw-items-center sw-mt-9 sw-mb-4 sw-justify-between">
@@ -185,7 +208,7 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
               <HelperHintIcon />
             </DocHelpTooltip>
           )}
-          <Spinner loading={isFetching} className="sw-ml-4 sw-mt-1" />
+          <Spinner isLoading={isFetching} className="sw-ml-4 sw-mt-1" />
         </div>
         <div>
           {(caycStatus === CaycStatus.NonCompliant || editing) && canEdit && (
@@ -193,7 +216,6 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
           )}
         </div>
       </header>
-
       {uniqDuplicates.length > 0 && (
         <FlagMessage variant="warning" className="sw-flex sw-mb-4">
           <div>
@@ -206,7 +228,6 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
           </div>
         </FlagMessage>
       )}
-
       <div className="sw-flex sw-flex-col sw-gap-8">
         {caycConditions.length > 0 && (
           <div>
@@ -245,9 +266,16 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
 
         {newCodeConditions.length > 0 && (
           <div>
-            <HeadingDark as="h3" className="sw-mb-2">
-              {translate('quality_gates.conditions.new_code', 'long')}
-            </HeadingDark>
+            <div className="sw-flex sw-justify-between">
+              <HeadingDark className="sw-mb-2">
+                {translate('quality_gates.conditions.new_code', 'long')}
+              </HeadingDark>
+              {hasFeature(Feature.BranchSupport) && (
+                <Note className="sw-mb-2 sw-typo-default">
+                  {translate('quality_gates.conditions.new_code', 'description')}
+                </Note>
+              )}
+            </div>
 
             <ConditionsTable
               qualityGate={qualityGate}
@@ -257,20 +285,21 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
               showEdit={editing}
               scope="new"
             />
-
-            {hasFeature(Feature.BranchSupport) && (
-              <Note className="sw-mb-2 sw-typo-default">
-                {translate('quality_gates.conditions.new_code', 'description')}
-              </Note>
-            )}
           </div>
         )}
 
         {overallCodeConditions.length > 0 && (
           <div className="sw-mt-5">
-            <HeadingDark as="h3" className="sw-mb-2">
-              {translate('quality_gates.conditions.overall_code', 'long')}
-            </HeadingDark>
+            <div className="sw-flex sw-justify-between">
+              <HeadingDark className="sw-mb-2">
+                {translate('quality_gates.conditions.overall_code', 'long')}
+              </HeadingDark>
+              {hasFeature(Feature.BranchSupport) && (
+                <Note className="sw-mb-2 sw-typo-default">
+                  {translate('quality_gates.conditions.overall_code', 'description')}
+                </Note>
+              )}
+            </div>
 
             <ConditionsTable
               qualityGate={qualityGate}
@@ -279,16 +308,9 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
               conditions={overallCodeConditions}
               scope="overall"
             />
-
-            {hasFeature(Feature.BranchSupport) && (
-              <Note className="sw-mb-2 sw-typo-default">
-                {translate('quality_gates.conditions.overall_code', 'description')}
-              </Note>
-            )}
           </div>
         )}
       </div>
-
       {caycStatus !== CaycStatus.NonCompliant && !editing && canEdit && (
         <div className="sw-mt-4 it__qg-unfollow-cayc">
           <SubHeading as="p" className="sw-mb-2 sw-typo-default">
@@ -305,12 +327,11 @@ export default function Conditions({ qualityGate, isFetching }: Readonly<Props>)
           </ButtonSecondary>
         </div>
       )}
-
       {existingConditions.length === 0 && (
         <div className="sw-mt-4 sw-typo-default">
           <LightPrimary as="p">{translate('quality_gates.no_conditions')}</LightPrimary>
         </div>
       )}
-    </div>
+    </Spinner>
   );
 }

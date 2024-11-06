@@ -18,7 +18,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import * as React from 'react';
+import { ReactNode } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { Badge, FlagMessage, MultiSelectMenu } from '~design-system';
 import { MetricKey } from '~sonar-aligned/types/metrics';
@@ -43,7 +43,7 @@ export default function AddGraphMetricPopup({
   ...props
 }: Readonly<AddGraphMetricPopupProps>) {
   const intl = useIntl();
-  let footerNode: React.ReactNode = '';
+  let footerNode: ReactNode = '';
 
   if (props.selectedElements.length >= 6) {
     footerNode = (
@@ -96,7 +96,6 @@ export default function AddGraphMetricPopup({
 
     return null;
   };
-
   return (
     <MultiSelectMenu
       createElementLabel=""
@@ -112,8 +111,8 @@ export default function AddGraphMetricPopup({
       onUnselect={props.onUnselect}
       placeholder={translate('search.search_for_metrics')}
       renderAriaLabel={renderAriaLabel}
-      renderLabel={renderLabel}
       renderTooltip={renderTooltip}
+      renderLabel={renderLabel}
       selectedElements={props.selectedElements}
       listSize={0}
     />

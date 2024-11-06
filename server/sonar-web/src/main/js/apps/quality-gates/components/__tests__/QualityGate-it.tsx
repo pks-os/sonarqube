@@ -20,29 +20,55 @@
 
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { byLabelText, byRole, byTestId } from '~sonar-aligned/helpers/testSelector';
+import { byLabelText, byRole, byTestId, byText } from '~sonar-aligned/helpers/testSelector';
 import { QualityGatesServiceMock } from '../../../../api/mocks/QualityGatesServiceMock';
+import SettingsServiceMock from '../../../../api/mocks/SettingsServiceMock';
 import UsersServiceMock from '../../../../api/mocks/UsersServiceMock';
 import { searchProjects, searchUsers } from '../../../../api/quality-gates';
 import { dismissNotice } from '../../../../api/users';
 import { mockLoggedInUser } from '../../../../helpers/testMocks';
-import { RenderContext, renderAppRoutes } from '../../../../helpers/testReactTestingUtils';
+import { renderAppRoutes, RenderContext } from '../../../../helpers/testReactTestingUtils';
 import { Feature } from '../../../../types/features';
+import { SettingsKey } from '../../../../types/settings';
 import { CaycStatus } from '../../../../types/types';
 import { NoticeType } from '../../../../types/users';
 import routes from '../../routes';
 
+const ui = {
+  batchUpdate: byRole('button', { name: 'quality_gates.mode_banner.button' }),
+  singleUpdate: byRole('button', {
+    name: /quality_gates.mqr_mode_update.single_metric.tooltip.message/,
+  }),
+  removeCondition: byRole('button', { name: /quality_gates.condition.delete/ }),
+  listItem: byTestId('js-subnavigation-item'),
+  requiresUpdateIndicator: byTestId('quality-gates-mqr-standard-mode-update-indicator'),
+  qualityGateListItem: (qualityGateName: string) => byRole('link', { name: qualityGateName }),
+  newConditionRow: byTestId('quality-gates__conditions-new').byRole('row'),
+  overallConditionRow: byTestId('quality-gates__conditions-overall').byRole('row'),
+  addConditionButton: byRole('button', { name: 'quality_gates.add_condition' }),
+  batchDialog: byRole('dialog', { name: /quality_gates.update_conditions.header/ }),
+  singleDialog: byRole('dialog', { name: /quality_gates.update_conditions.header.single_metric/ }),
+  updateMetricsBtn: byRole('button', { name: 'quality_gates.update_conditions.update_metrics' }),
+  updateSingleBtn: byRole('button', { name: 'update_verb' }),
+  cancelBtn: byRole('button', { name: 'cancel' }),
+  standardBadge: byText('quality_gates.metric.standard_mode_short'),
+  mqrBadge: byText('quality_gates.metric.mqr_mode_short'),
+};
+
 let qualityGateHandler: QualityGatesServiceMock;
 let usersHandler: UsersServiceMock;
+let settingsHandler: SettingsServiceMock;
 
 beforeAll(() => {
   qualityGateHandler = new QualityGatesServiceMock();
   usersHandler = new UsersServiceMock();
+  settingsHandler = new SettingsServiceMock();
 });
 
 afterEach(() => {
   qualityGateHandler.reset();
   usersHandler.reset();
+  settingsHandler.reset();
 });
 
 it('should open the default quality gates', async () => {
@@ -71,6 +97,21 @@ it('should list all quality gates', async () => {
       name: `${qualityGateHandler.getBuiltInQualityGate().name} quality_gates.built_in`,
     }),
   ).toBeInTheDocument();
+});
+
+it('should show MQR mode update icon if standard mode conditions are present', async () => {
+  qualityGateHandler.setIsAdmin(true);
+  renderQualityGateApp();
+
+  expect(await ui.requiresUpdateIndicator.findAll()).toHaveLength(3);
+});
+
+it('should show Standard mode update icon if MQR mode conditions are present', async () => {
+  settingsHandler.set(SettingsKey.MQRMode, 'false');
+  qualityGateHandler.setIsAdmin(true);
+  renderQualityGateApp();
+
+  expect(await ui.requiresUpdateIndicator.findAll()).toHaveLength(4);
 });
 
 it('should render the built-in quality gate properly', async () => {
@@ -247,8 +288,8 @@ it('should be able to add a condition on overall code', async () => {
   );
 
   // In real app there are no metrics with selectable condition operator
-  // so we manually changed direction for Info Issues to 0 to test this behavior
-  await user.click(await dialog.byRole('option', { name: 'Info Issues' }).find());
+  // so we manually changed direction for Cognitive Complexity to 0 to test this behavior
+  await user.click(await dialog.byRole('option', { name: 'Cognitive Complexity' }).find());
 
   await user.click(await dialog.byLabelText('quality_gates.conditions.operator').find());
 
@@ -260,7 +301,7 @@ it('should be able to add a condition on overall code', async () => {
   const overallConditions = byTestId('quality-gates__conditions-overall');
 
   expect(
-    await overallConditions.byRole('cell', { name: 'Info Issues' }).find(),
+    await overallConditions.byRole('cell', { name: 'Cognitive Complexity' }).find(),
   ).toBeInTheDocument();
   expect(await overallConditions.byRole('cell', { name: '42' }).find()).toBeInTheDocument();
 });
@@ -290,7 +331,7 @@ it('should be able to select a rating', async () => {
   const overallConditions = byTestId('quality-gates__conditions-overall');
 
   expect(
-    await overallConditions.byRole('cell', { name: 'Maintainability Rating' }).find(),
+    await overallConditions.byRole('cell', { name: /Maintainability Rating/ }).find(),
   ).toBeInTheDocument();
   expect(await overallConditions.byRole('cell', { name: 'B' }).find()).toBeInTheDocument();
 });
@@ -869,7 +910,7 @@ describe('The Permissions section', () => {
   });
 
   it('should handle searchUser service failure', async () => {
-    (searchUsers as jest.Mock).mockRejectedValue('error');
+    jest.mocked(searchUsers).mockRejectedValue('error');
 
     const user = userEvent.setup();
     qualityGateHandler.setIsAdmin(true);
@@ -886,6 +927,223 @@ describe('The Permissions section', () => {
     await user.click(searchUserInput);
 
     expect(screen.getByText('select.search.noMatches')).toBeInTheDocument();
+  });
+});
+
+describe('Mode transition', () => {
+  describe('MQR mode', () => {
+    it('should not see that quality gates require updates if not an admin', async () => {
+      const user = userEvent.setup();
+      renderQualityGateApp();
+
+      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(ui.requiresUpdateIndicator.query()).not.toBeInTheDocument();
+      await user.click(ui.qualityGateListItem('SonarSource way default').get());
+      expect(byText('quality_gates.cayc.banner.title').get()).toBeInTheDocument();
+      expect(ui.batchUpdate.query()).not.toBeInTheDocument();
+      expect(ui.singleUpdate.query()).not.toBeInTheDocument();
+      expect(ui.standardBadge.query()).not.toBeInTheDocument();
+    });
+
+    it('should see that quality gates require updates if an admin', async () => {
+      const user = userEvent.setup();
+      qualityGateHandler.setIsAdmin(true);
+      renderQualityGateApp();
+
+      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(
+        ui.qualityGateListItem('SonarSource way default').by(ui.requiresUpdateIndicator).get(),
+      ).toBeInTheDocument();
+      await user.click(ui.qualityGateListItem('SonarSource way default').get());
+      expect(byText('quality_gates.cayc.banner.title').query()).not.toBeInTheDocument();
+      expect(ui.batchUpdate.get()).toBeInTheDocument();
+      expect(ui.singleUpdate.getAll()).toHaveLength(5);
+      expect(ui.standardBadge.getAll()).toHaveLength(5);
+    });
+
+    it('should update conditions to MQR mode', async () => {
+      const user = userEvent.setup();
+      qualityGateHandler.setIsAdmin(true);
+      renderQualityGateApp();
+
+      expect(await ui.listItem.findAll()).toHaveLength(9);
+      await user.click(ui.qualityGateListItem('SonarSource way default').get());
+
+      await user.click(ui.batchUpdate.get());
+      expect(ui.batchDialog.get()).toBeInTheDocument();
+      // + 1 for headers
+      expect(ui.batchDialog.by(ui.newConditionRow).getAll()).toHaveLength(4);
+      expect(ui.batchDialog.by(ui.overallConditionRow).getAll()).toHaveLength(3);
+      await user.click(ui.batchDialog.by(ui.cancelBtn).get());
+
+      expect(ui.newConditionRow.getAt(7)).toHaveTextContent(
+        'Reliability Ratingquality_gates.metric.standard_mode_short',
+      );
+      expect(ui.singleUpdate.get(ui.newConditionRow.getAt(7))).toBeInTheDocument();
+      await user.click(ui.singleUpdate.get(ui.newConditionRow.getAt(7)));
+      expect(ui.singleDialog.get()).toBeInTheDocument();
+      expect(ui.singleDialog.get()).toHaveTextContent(
+        'quality_gates.metric.standard_mode_longReliability Ratingquality_gates.metric.mqr_mode_longReliability Rating',
+      );
+      await user.click(ui.updateSingleBtn.get());
+
+      expect(ui.singleUpdate.getAll()).toHaveLength(4);
+      expect(ui.standardBadge.getAll()).toHaveLength(4);
+
+      await user.click(ui.batchUpdate.get());
+      expect(ui.batchDialog.get()).toBeInTheDocument();
+      // + 1 for headers
+      expect(ui.batchDialog.by(ui.newConditionRow).getAll()).toHaveLength(3);
+      expect(ui.batchDialog.by(ui.overallConditionRow).getAll()).toHaveLength(3);
+      expect(ui.batchDialog.by(ui.newConditionRow).getAt(1)).toHaveTextContent(
+        'Maintainability RatingMaintainability Rating',
+      );
+      expect(ui.batchDialog.by(ui.overallConditionRow).getAt(1)).toHaveTextContent(
+        'Reliability RatingReliability Rating',
+      );
+      await user.click(ui.batchDialog.by(ui.updateMetricsBtn).get());
+
+      expect(byText('quality_gates.cayc.banner.title').get()).toBeInTheDocument();
+      expect(ui.batchUpdate.query()).not.toBeInTheDocument();
+      expect(ui.singleUpdate.query()).not.toBeInTheDocument();
+      expect(ui.standardBadge.query()).not.toBeInTheDocument();
+    });
+
+    it('should not let adding condition if a similar one from another mode already added', async () => {
+      const user = userEvent.setup();
+      qualityGateHandler.setIsAdmin(true);
+      renderQualityGateApp();
+
+      expect(await ui.listItem.findAll()).toHaveLength(9);
+      await user.click(ui.qualityGateListItem('QG without new code conditions').get());
+      await user.click(await ui.addConditionButton.find());
+
+      const dialog = byRole('dialog');
+
+      await user.click(
+        dialog.byRole('radio', { name: 'quality_gates.conditions.overall_code' }).get(),
+      );
+
+      // try adding Security Rating from MQR Mode
+      await user.click(
+        dialog.byRole('combobox', { name: 'quality_gates.conditions.fails_when' }).get(),
+      );
+      await user.click(dialog.byRole('option', { name: 'Security Rating' }).get());
+      expect(
+        byText(
+          'quality_gates.add_condition.metric_from_other_mode.true.metric.security_rating.name',
+        ).get(),
+      ).toBeInTheDocument();
+      expect(dialog.byRole('button', { name: 'quality_gates.add_condition' }).get()).toBeDisabled();
+    });
+  });
+
+  describe('Standard mode', () => {
+    beforeEach(() => {
+      settingsHandler.set(SettingsKey.MQRMode, 'false');
+    });
+
+    it('should not see that quality gates require updates if not an admin', async () => {
+      const user = userEvent.setup();
+      renderQualityGateApp();
+
+      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(ui.requiresUpdateIndicator.query()).not.toBeInTheDocument();
+      await user.click(ui.qualityGateListItem('QG with MQR conditions').get());
+      expect(ui.batchUpdate.query()).not.toBeInTheDocument();
+      expect(ui.singleUpdate.query()).not.toBeInTheDocument();
+      expect(ui.mqrBadge.query()).not.toBeInTheDocument();
+    });
+
+    it('should see that quality gates require updates if an admin', async () => {
+      const user = userEvent.setup();
+      qualityGateHandler.setIsAdmin(true);
+      renderQualityGateApp();
+
+      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(
+        ui.qualityGateListItem('QG with MQR conditions').by(ui.requiresUpdateIndicator).get(),
+      ).toBeInTheDocument();
+      await user.click(ui.qualityGateListItem('QG with MQR conditions').get());
+      expect(ui.batchUpdate.get()).toBeInTheDocument();
+      expect(ui.singleUpdate.getAll()).toHaveLength(4);
+      expect(ui.mqrBadge.getAll()).toHaveLength(4);
+    });
+
+    it('should update conditions to Standard mode', async () => {
+      const user = userEvent.setup();
+      qualityGateHandler.setIsAdmin(true);
+      renderQualityGateApp();
+
+      expect(await ui.listItem.findAll()).toHaveLength(9);
+      await user.click(ui.qualityGateListItem('QG with MQR conditions').get());
+
+      await user.click(ui.batchUpdate.get());
+      expect(ui.batchDialog.get()).toBeInTheDocument();
+      // + 1 for headers
+      expect(ui.batchDialog.by(ui.newConditionRow).getAll()).toHaveLength(3);
+      expect(ui.batchDialog.by(ui.overallConditionRow).getAll()).toHaveLength(3);
+      await user.click(ui.batchDialog.by(ui.cancelBtn).get());
+
+      expect(ui.newConditionRow.getAt(1)).toHaveTextContent(
+        'Blocker Severity Issuesquality_gates.metric.mqr_mode_short',
+      );
+      expect(ui.singleUpdate.get(ui.newConditionRow.getAt(1))).toBeInTheDocument();
+      await user.click(ui.singleUpdate.get(ui.newConditionRow.getAt(1)));
+      expect(ui.singleDialog.get()).toBeInTheDocument();
+      expect(ui.singleDialog.get()).toHaveTextContent(
+        'quality_gates.metric.mqr_mode_longBlocker Severity Issuesquality_gates.metric.standard_mode_longBlocker Issues',
+      );
+      await user.click(ui.updateSingleBtn.get());
+
+      expect(ui.singleUpdate.getAll()).toHaveLength(3);
+      expect(ui.mqrBadge.getAll()).toHaveLength(3);
+
+      await user.click(ui.batchUpdate.get());
+      expect(ui.batchDialog.get()).toBeInTheDocument();
+      // + 1 for headers
+      expect(ui.batchDialog.by(ui.newConditionRow).getAll()).toHaveLength(2);
+      expect(ui.batchDialog.by(ui.overallConditionRow).getAll()).toHaveLength(3);
+      expect(ui.batchDialog.by(ui.newConditionRow).getAt(1)).toHaveTextContent(
+        'High Severity IssuesCritical Issues',
+      );
+      expect(ui.batchDialog.by(ui.overallConditionRow).getAt(1)).toHaveTextContent(
+        'Blocker and High Severity Accepted Issuesquality_gates.update_conditions.removed',
+      );
+      expect(ui.batchDialog.by(ui.overallConditionRow).getAt(2)).toHaveTextContent(
+        'Security RatingSecurity Rating',
+      );
+      await user.click(ui.batchDialog.by(ui.updateMetricsBtn).get());
+
+      expect(byText('quality_gates.cayc_missing.banner.title').get()).toBeInTheDocument();
+      expect(ui.batchUpdate.query()).not.toBeInTheDocument();
+      expect(ui.singleUpdate.query()).not.toBeInTheDocument();
+      expect(ui.mqrBadge.query()).not.toBeInTheDocument();
+    });
+
+    it('should not let adding condition if a similar one from another mode already added', async () => {
+      const user = userEvent.setup();
+      qualityGateHandler.setIsAdmin(true);
+      renderQualityGateApp();
+
+      expect(await ui.listItem.findAll()).toHaveLength(9);
+      await user.click(ui.qualityGateListItem('QG with MQR conditions').get());
+      await user.click(await ui.addConditionButton.find());
+
+      const dialog = byRole('dialog');
+
+      // try adding blocker issues metric
+      await user.click(
+        dialog.byRole('combobox', { name: 'quality_gates.conditions.fails_when' }).get(),
+      );
+      await user.click(dialog.byRole('option', { name: 'Blocker Issues' }).get());
+      expect(
+        byText(
+          'quality_gates.add_condition.metric_from_other_mode.false.metric.new_software_quality_blocker_issues.name',
+        ).get(),
+      ).toBeInTheDocument();
+      expect(dialog.byRole('button', { name: 'quality_gates.add_condition' }).get()).toBeDisabled();
+    });
   });
 });
 
