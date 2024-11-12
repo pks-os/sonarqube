@@ -17,21 +17,16 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.server.pushapi.issues;
 
-import java.util.Collection;
-import java.util.Map;
-import javax.annotation.Nullable;
-import org.sonar.api.issue.impact.Severity;
-import org.sonar.api.issue.impact.SoftwareQuality;
-import org.sonar.core.issue.DefaultIssue;
-import org.sonar.db.component.BranchDto;
-import org.sonar.db.component.ComponentDto;
+import { queryOptions } from '@tanstack/react-query';
+import { getSecurityHotspotDetails } from '../api/security-hotspots';
+import { createQueryHook, StaleTime } from './common';
 
-public interface IssueChangeEventService {
-  void distributeIssueChangeEvent(DefaultIssue issue, @Nullable String severity, Map<SoftwareQuality, Severity> impacts, @Nullable String type,
-    @Nullable String transitionKey, BranchDto branch, String projectKey);
-
-  void distributeIssueChangeEvent(Collection<DefaultIssue> issues, Map<String, ComponentDto> projectsByUuid,
-    Map<String, BranchDto> branchesByProjectUuid);
-}
+export const useSecurityHotspotDetailsQuery = createQueryHook((param: { key: string }) =>
+  queryOptions({
+    queryKey: ['hotspot', 'details', param.key],
+    queryFn: () => getSecurityHotspotDetails(param.key),
+    // For now no mutation is migrate, later it can be set to never
+    staleTime: StaleTime.LIVE,
+  }),
+);
