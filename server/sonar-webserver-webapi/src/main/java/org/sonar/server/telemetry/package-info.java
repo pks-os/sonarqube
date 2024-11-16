@@ -17,32 +17,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+@ParametersAreNonnullByDefault
+package org.sonar.server.telemetry;
 
-import * as React from 'react';
-import { RuleDetails } from '../../../types/types';
-import CustomRuleFormModal from './CustomRuleFormModal';
-
-interface Props {
-  children: (props: { onClick: () => void }) => React.ReactNode;
-  customRule?: RuleDetails;
-  templateRule: RuleDetails;
-}
-
-export default function CustomRuleButton(props: Props) {
-  const { customRule, templateRule } = props;
-  const [modalOpen, setModalOpen] = React.useState(false);
-
-  return (
-    <>
-      {props.children({ onClick: () => setModalOpen(true) })}
-      {modalOpen && (
-        <CustomRuleFormModal
-          customRule={customRule}
-          onClose={() => setModalOpen(false)}
-          templateRule={templateRule}
-          isOpen={modalOpen}
-        />
-      )}
-    </>
-  );
-}
+import javax.annotation.ParametersAreNonnullByDefault;

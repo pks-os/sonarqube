@@ -43,13 +43,14 @@ import org.sonar.server.issue.IssueFinder;
 import org.sonar.server.pushapi.issues.IssueChangeEventService;
 import org.sonar.server.user.UserSession;
 
-import static org.sonar.api.server.rule.internal.ImpactMapper.convertToDeprecatedSeverity;
+import static org.sonar.api.server.rule.internal.ImpactMapper.convertToRuleSeverity;
 import static org.sonar.api.server.rule.internal.ImpactMapper.convertToRuleType;
 import static org.sonar.api.server.rule.internal.ImpactMapper.convertToSoftwareQuality;
 import static org.sonar.api.web.UserRole.ISSUE_ADMIN;
 import static org.sonar.core.issue.IssueChangeContext.issueChangeContextByUserBuilder;
 import static org.sonar.core.rule.ImpactSeverityMapper.mapImpactSeverity;
 import static org.sonar.db.component.BranchType.BRANCH;
+import static org.sonar.server.common.ParamParsingUtils.parseImpact;
 import static org.sonarqube.ws.client.issue.IssuesWsParameters.ACTION_SET_SEVERITY;
 import static org.sonarqube.ws.client.issue.IssuesWsParameters.PARAM_IMPACT;
 import static org.sonarqube.ws.client.issue.IssuesWsParameters.PARAM_ISSUE;
@@ -163,7 +164,7 @@ public class SetSeverityAction implements IssuesWsAction {
       String manualSeverity = null;
       boolean severityHasChanged = false;
       if (convertToRuleType(softwareQuality).equals(issue.type())) {
-        manualSeverity = convertToDeprecatedSeverity(manualImpactSeverity);
+        manualSeverity = convertToRuleSeverity(manualImpactSeverity);
         severityHasChanged = issueFieldsSetter.setManualSeverity(issue, manualSeverity, context);
       }
       BranchDto branch = issueUpdater.getBranch(session, issue);
@@ -218,14 +219,5 @@ public class SetSeverityAction implements IssuesWsAction {
     } else if (severity == null && impact == null) {
       throw new IllegalArgumentException("One of the parameters 'severity' or 'impact' must be provided");
     }
-  }
-
-  private static Pair<SoftwareQuality, org.sonar.api.issue.impact.Severity> parseImpact(String impact) {
-    String[] parts = impact.split("=");
-    if (parts.length != 2) {
-      throw new IllegalArgumentException("Invalid impact format: " + impact);
-    }
-    return Pair.of(SoftwareQuality.valueOf(parts[0]),
-      org.sonar.api.issue.impact.Severity.valueOf(parts[1]));
   }
 }

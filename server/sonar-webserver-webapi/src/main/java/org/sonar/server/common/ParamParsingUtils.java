@@ -17,32 +17,23 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+package org.sonar.server.common;
 
-import * as React from 'react';
-import { RuleDetails } from '../../../types/types';
-import CustomRuleFormModal from './CustomRuleFormModal';
+import org.apache.commons.lang3.tuple.Pair;
+import org.sonar.api.issue.impact.Severity;
+import org.sonar.api.issue.impact.SoftwareQuality;
 
-interface Props {
-  children: (props: { onClick: () => void }) => React.ReactNode;
-  customRule?: RuleDetails;
-  templateRule: RuleDetails;
-}
+public class ParamParsingUtils {
+  private ParamParsingUtils() {
+    // utility class
+  }
 
-export default function CustomRuleButton(props: Props) {
-  const { customRule, templateRule } = props;
-  const [modalOpen, setModalOpen] = React.useState(false);
-
-  return (
-    <>
-      {props.children({ onClick: () => setModalOpen(true) })}
-      {modalOpen && (
-        <CustomRuleFormModal
-          customRule={customRule}
-          onClose={() => setModalOpen(false)}
-          templateRule={templateRule}
-          isOpen={modalOpen}
-        />
-      )}
-    </>
-  );
+  public static Pair<SoftwareQuality, Severity> parseImpact(String impact) {
+    String[] parts = impact.split("=");
+    if (parts.length != 2) {
+      throw new IllegalArgumentException("Invalid impact format: " + impact);
+    }
+    return Pair.of(SoftwareQuality.valueOf(parts[0]),
+      Severity.valueOf(parts[1]));
+  }
 }

@@ -35,6 +35,7 @@ import org.sonar.db.measure.MeasureDto;
 import org.sonar.db.metric.MetricDto;
 import org.sonar.server.badge.ws.SvgGenerator.Color;
 import org.sonar.server.measure.Rating;
+import org.sonar.server.telemetry.TelemetryBadgeProvider;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.lang.String.format;
@@ -118,10 +119,13 @@ public class MeasureAction extends AbstractProjectBadgesWsAction {
     E, Color.RATING_E));
 
   private final DbClient dbClient;
+  private final TelemetryBadgeProvider telemetryBadgeProvider;
 
-  public MeasureAction(DbClient dbClient, ProjectBadgesSupport support, SvgGenerator svgGenerator) {
+  public MeasureAction(DbClient dbClient, ProjectBadgesSupport support, SvgGenerator svgGenerator,
+    TelemetryBadgeProvider telemetryBadgeProvider) {
     super(support, svgGenerator);
     this.dbClient = dbClient;
+    this.telemetryBadgeProvider = telemetryBadgeProvider;
   }
 
   @Override
@@ -151,6 +155,7 @@ public class MeasureAction extends AbstractProjectBadgesWsAction {
       MetricDto metric = dbClient.metricDao().selectByKey(dbSession, metricKey);
       checkState(metric != null && metric.isEnabled(), "Metric '%s' hasn't been found", metricKey);
       MeasureDto measure = getMeasure(dbSession, branch);
+      telemetryBadgeProvider.incrementForMetric(metricKey);
       return generateSvg(metric, measure);
     }
   }
