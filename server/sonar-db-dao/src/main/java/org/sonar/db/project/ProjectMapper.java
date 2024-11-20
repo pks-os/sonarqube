@@ -60,6 +60,8 @@ public interface ProjectMapper {
 
   void updateAiCodeAssurance(@Param("uuid") String uuid, @Param("aiCodeAssurance") boolean aiCodeAssurance, @Param("updatedAt") long updatedAt);
 
+  void updateAiCodeFixEnablementForAllProjects(@Param("aiCodeFixEnabled") boolean aiCodeFixEnabled, @Param("updatedAt") long updatedAt);
+
   List<ProjectDto> selectAllApplications();
 
   List<ProjectDto> selectApplicationsByKeys(@Param("kees") Collection<String> kees);
@@ -75,4 +77,6 @@ public interface ProjectMapper {
   int countIndexedProjects();
 
   int countProjects();
+
+  int countProjectsByAiCodeFixEnablement(@Param("aiCodeFixEnabled") boolean aiCodeFixEnabled);
 }

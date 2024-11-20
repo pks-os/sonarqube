@@ -17,22 +17,12 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+package org.sonar.core.config;
 
-export enum AiCodeFixFeatureEnablement {
-  disabled = 'DISABLED',
-  allProjects = 'ENABLED_FOR_ALL_PROJECTS',
-  someProjects = 'ENABLED_FOR_SOME_PROJECTS',
-}
+public final class AiCodeFixEnablementConstants {
+  public static final String SUGGESTION_FEATURE_ENABLED_PROPERTY = "sonar.ai.suggestions.enabled";
 
-interface SuggestedChange {
-  endLine: number;
-  newCode: string;
-  startLine: number;
-}
+  private AiCodeFixEnablementConstants() {
+  }
 
-export interface SuggestedFix {
-  changes: SuggestedChange[];
-  explanation: string;
-  id: string;
-  issueId: string;
 }

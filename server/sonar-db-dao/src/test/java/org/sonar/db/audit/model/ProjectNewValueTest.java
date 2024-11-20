@@ -17,22 +17,32 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+package org.sonar.db.audit.model;
 
-export enum AiCodeFixFeatureEnablement {
-  disabled = 'DISABLED',
-  allProjects = 'ENABLED_FOR_ALL_PROJECTS',
-  someProjects = 'ENABLED_FOR_SOME_PROJECTS',
-}
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.junit.jupiter.api.Test;
+import org.sonar.db.project.ProjectDto;
 
-interface SuggestedChange {
-  endLine: number;
-  newCode: string;
-  startLine: number;
-}
+import static org.assertj.core.api.Assertions.assertThat;
 
-export interface SuggestedFix {
-  changes: SuggestedChange[];
-  explanation: string;
-  id: string;
-  issueId: string;
+class ProjectNewValueTest {
+
+  @Test
+  void toString_generatesValidJson() throws ParseException {
+    var project = new ProjectDto()
+      .setUuid("uuid")
+      .setName("name")
+      .setKey("key")
+      .setPrivate(true)
+      .setDescription("description")
+      .setQualifier("TRK")
+      .setAiCodeFixEnabled(true);
+    ProjectNewValue newValue = new ProjectNewValue(project);
+
+    JSONObject jsonObject = (JSONObject) new JSONParser().parse(newValue.toString());
+
+    assertThat(jsonObject).hasSize(7);
+  }
 }

@@ -12,6 +12,7 @@
       p.private as isPrivate,
       p.creation_method as creationMethod,
       p.ai_code_assurance as aiCodeAssurance,
+      p.ai_code_fix_enabled as aiCodeFixEnabled,
       p.created_at as createdAt,
       p.updated_at as updatedAt
     </sql>
@@ -138,6 +139,7 @@
       tags,
       creation_method,
       ai_code_assurance,
+      ai_code_fix_enabled,
       created_at,
       updated_at
     )
@@ -151,6 +153,7 @@
     #{tagsString, jdbcType=VARCHAR},
     #{creationMethod, jdbcType=VARCHAR},
     #{aiCodeAssurance, jdbcType=BOOLEAN},
+    #{aiCodeFixEnabled, jdbcType=BOOLEAN},
     #{createdAt,jdbcType=BIGINT},
     #{updatedAt,jdbcType=BIGINT}
     )
@@ -168,6 +171,7 @@
     update projects set
     name = #{name,jdbcType=VARCHAR},
     description = #{description,jdbcType=VARCHAR},
+    ai_code_fix_enabled = #{aiCodeFixEnabled, jdbcType=BOOLEAN},
     updated_at = #{updatedAt,jdbcType=BIGINT}
     where
     uuid = #{uuid,jdbcType=VARCHAR}
@@ -187,6 +191,12 @@
     updated_at = #{updatedAt,jdbcType=BIGINT}
     where
     uuid = #{uuid,jdbcType=VARCHAR}
+  </update>
+
+  <update id="updateAiCodeFixEnablementForAllProjects">
+    update projects set
+    ai_code_fix_enabled = #{aiCodeFixEnabled,jdbcType=BOOLEAN},
+    updated_at = #{updatedAt,jdbcType=BIGINT}
   </update>
 
   <update id="updateNcloc">
@@ -214,6 +224,14 @@
     select count(p.uuid)
     from projects p
     where p.qualifier = 'TRK'
+  </select>
+
+  <select id="countProjectsByAiCodeFixEnablement" resultType="int">
+    select count(p.uuid)
+    from projects p
+    where
+    p.qualifier = 'TRK'
+    and ai_code_fix_enabled = #{aiCodeFixEnabled,jdbcType=BOOLEAN}
   </select>
 
 </mapper>
