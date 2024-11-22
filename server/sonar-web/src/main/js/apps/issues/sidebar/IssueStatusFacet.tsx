@@ -21,8 +21,10 @@
 import { isEqual, sortBy, without } from 'lodash';
 import { useIntl } from 'react-intl';
 import { FacetBox, FacetItem } from '~design-system';
+import { FacetHelp } from '../../../components/facets/FacetHelp';
 import { DEFAULT_ISSUES_QUERY } from '../../../components/shared/utils';
 import { ISSUE_STATUSES } from '../../../helpers/constants';
+import { DocLink } from '../../../helpers/doc-links';
 import { IssueStatus } from '../../../types/issues';
 import { formatFacetStat } from '../utils';
 import { FacetItemsList } from './FacetItemsList';
@@ -65,7 +67,7 @@ export function IssueStatusFacet(props: Readonly<Props>) {
       }
       onClick={() => props.onToggle(property)}
       open={open}
-      help={help}
+      help={help ?? <FacetHelp property="issueStatuses" link={DocLink.IssueStatuses} />}
     >
       <FacetItemsList labelledby={headerId}>
         {ISSUE_STATUSES.map((item) => {

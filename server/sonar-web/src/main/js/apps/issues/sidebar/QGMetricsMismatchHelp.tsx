@@ -18,9 +18,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-import { Button, ButtonVariety, IconQuestionMark, Popover } from '@sonarsource/echoes-react';
 import { useIntl } from 'react-intl';
-import DocumentationLink from '../../../components/common/DocumentationLink';
+import { FacetHelp } from '../../../components/facets/FacetHelp';
 import { DocLink } from '../../../helpers/doc-links';
 import { useStandardExperienceMode } from '../../../queries/settings';
 
@@ -28,22 +27,11 @@ export default function QGMetricsMismatchHelp() {
   const intl = useIntl();
   const { data: isStandardMode } = useStandardExperienceMode();
   return (
-    <Popover
+    <FacetHelp
       title={intl.formatMessage({ id: 'issues.qg_mismatch.title' })}
       description={intl.formatMessage({ id: 'issues.qg_mismatch.description' }, { isStandardMode })}
-      footer={
-        <DocumentationLink standalone to={DocLink.QualityGates}>
-          {intl.formatMessage({ id: 'issues.qg_mismatch.link' })}
-        </DocumentationLink>
-      }
-    >
-      <Button
-        className="sw-p-0 sw-h-fit sw-min-h-fit"
-        aria-label={intl.formatMessage({ id: 'help' })}
-        variety={ButtonVariety.DefaultGhost}
-      >
-        <IconQuestionMark />
-      </Button>
-    </Popover>
+      linkText={intl.formatMessage({ id: 'issues.qg_mismatch.link' })}
+      link={DocLink.QualityGates}
+    />
   );
 }
