@@ -19,7 +19,7 @@
  */
 
 import { areCCTMeasuresComputed, areSoftwareQualityRatingsComputed } from '../../helpers/measures';
-import { useStandardExperienceMode } from '../../queries/settings';
+import { useStandardExperienceModeQuery } from '../../queries/mode';
 import { MeasureEnhanced } from '../../types/types';
 import {
   legacyBubbles,
@@ -28,7 +28,7 @@ import {
 } from './config/bubbles';
 
 export function useBubbleChartMetrics(measures: MeasureEnhanced[]) {
-  const { data: isStandardMode } = useStandardExperienceMode();
+  const { data: isStandardMode } = useStandardExperienceModeQuery();
 
   if (isStandardMode || !areCCTMeasuresComputed(measures)) {
     return legacyBubbles;
