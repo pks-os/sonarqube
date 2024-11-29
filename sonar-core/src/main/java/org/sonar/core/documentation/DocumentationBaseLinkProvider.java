@@ -17,22 +17,17 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
+package org.sonar.core.documentation;
 
-import { Heading, Text } from '@sonarsource/echoes-react';
-import { translate } from '../../../../helpers/l10n';
+import org.sonar.api.ce.ComputeEngineSide;
+import org.sonar.api.scanner.ScannerSide;
+import org.sonar.api.server.ServerSide;
+import org.sonar.core.extension.PlatformLevel;
 
-interface Props {
-  description?: string;
-  isApp?: boolean;
-}
-
-export default function MetaDescription({ description, isApp }: Props) {
-  return (
-    <>
-      <Heading as="h3">{translate('project.info.description')}</Heading>
-      <Text as="p" isSubdued className="it__project-description sw-mt-2">
-        {description ?? translate(isApp ? 'application' : 'project', 'info.empty_description')}
-      </Text>
-    </>
-  );
+@ServerSide
+@ComputeEngineSide
+@ScannerSide
+@PlatformLevel(1)
+public interface DocumentationBaseLinkProvider {
+  String getDocumentationBaseUrl();
 }
