@@ -128,6 +128,7 @@ message ShowWsResponse {
   required bool isDefault = 7;
   optional bool hasStandardConditions = 8;
   optional bool hasMQRConditions = 9;
+  optional bool isAiCodeSupported = 10;
 
   message Condition {
     required string id = 1;
@@ -149,6 +150,14 @@ message SearchResponse {
     optional bool selected = 3;
     optional string key = 4;
     optional bool isAiCodeAssured = 5;
+    optional AiCodeAssurance aiCodeAssurance = 6;
+  }
+
+  enum AiCodeAssurance {
+    UNKNOWN_AI_CODE_ASSURANCE = 0;
+    NONE = 1;
+    CONTAINS_AI_CODE = 2;
+    AI_CODE_ASSURED = 3;
   }
 }
 
@@ -167,6 +176,7 @@ message ListWsResponse {
     optional string caycStatus = 6;
     optional bool hasStandardConditions = 7;
     optional bool hasMQRConditions = 8;
+    optional bool isAiCodeSupported = 9;
   }
 
   message RootActions {
@@ -182,6 +192,7 @@ message Actions {
   optional bool delete = 5;
   optional bool manageConditions = 6;
   optional bool delegate = 7;
+  optional bool manageAiCodeAssurance = 8;
 }
 
 // WS api/qualitygates/search_users

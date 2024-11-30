@@ -18,10 +18,12 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+import { Heading, IconQuestionMark } from '@sonarsource/echoes-react';
 import * as React from 'react';
-import { FlagMessage, HelperHintIcon, SubTitle } from '~design-system';
+import { FlagMessage } from '~design-system';
 import DocHelpTooltip from '~sonar-aligned/components/controls/DocHelpTooltip';
 import { translate } from '../../../helpers/l10n';
+import { useInvalidateQualityGateQuery } from '../../../queries/quality-gates';
 import { QualityGate } from '../../../types/types';
 import Conditions from './Conditions';
 import Projects from './Projects';
@@ -35,6 +37,7 @@ export interface DetailsContentProps {
 export function DetailsContent(props: DetailsContentProps) {
   const { qualityGate, isFetching } = props;
   const actions = qualityGate.actions ?? {};
+  const invalidateQueryCache = useInvalidateQualityGateQuery();
 
   return (
     <div>
@@ -49,12 +52,12 @@ export function DetailsContent(props: DetailsContentProps) {
 
       <div className="sw-mt-10">
         <div className="sw-flex sw-flex-col">
-          <SubTitle as="h3" className="sw-typo-lg-semibold">
+          <Heading as="h3" className="sw-flex sw-items-center sw-typo-lg-semibold sw-mb-4">
             {translate('quality_gates.projects')}
             <DocHelpTooltip className="sw-ml-2" content={translate('quality_gates.projects.help')}>
-              <HelperHintIcon />
+              <IconQuestionMark />
             </DocHelpTooltip>
-          </SubTitle>
+          </Heading>
 
           {qualityGate.isDefault ? (
             <p className="sw-typo-default sw-mb-2">
@@ -63,6 +66,7 @@ export function DetailsContent(props: DetailsContentProps) {
           ) : (
             <Projects
               canEdit={actions.associateProjects}
+              onUpdate={invalidateQueryCache}
               // pass unique key to re-mount the component when the quality gate changes
               key={qualityGate.name}
               qualityGate={qualityGate}

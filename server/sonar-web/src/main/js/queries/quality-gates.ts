@@ -23,17 +23,21 @@ import { useIntl } from 'react-intl';
 import { addGlobalSuccessMessage } from '~design-system';
 import { BranchParameters } from '~sonar-aligned/types/branch-like';
 import {
+  associateGateWithProject,
   copyQualityGate,
   createCondition,
   createQualityGate,
   deleteCondition,
   deleteQualityGate,
+  dissociateGateWithProject,
   fetchQualityGate,
   fetchQualityGates,
+  getAllQualityGateProjects,
   getApplicationQualityGate,
   getGateForProject,
   getQualityGateProjectStatus,
   renameQualityGate,
+  setQualityGateAiQualified,
   setQualityGateAsDefault,
   updateCondition,
 } from '../api/quality-gates';
@@ -46,11 +50,13 @@ const QUERY_STALE_TIME = 5 * 60 * 1000;
 
 const qualityQuery = {
   all: () => ['quality-gate'] as const,
-  list: () => ['quality-gate', 'list'] as const,
-  details: () => ['quality-gate', 'details'] as const,
+  list: () => [...qualityQuery.all(), 'list'] as const,
+  details: () => [...qualityQuery.all(), 'details'] as const,
   detail: (name?: string) => [...qualityQuery.details(), name ?? ''] as const,
-  projectsAssoc: () => ['quality-gate', 'project-assoc'] as const,
+  projectsAssoc: () => [...qualityQuery.all(), 'project-assoc'] as const,
   projectAssoc: (project: string) => [...qualityQuery.projectsAssoc(), project] as const,
+  allProjectsSearch: (qualityGate: string) =>
+    [...qualityQuery.all(), 'all-project-search', qualityGate] as const,
 };
 
 // This is internal to "enable" query when searching from the project page
@@ -93,6 +99,17 @@ export const useQualityGatesQuery = createQueryHook(() => {
     staleTime: StaleTime.LONG,
   });
 });
+
+export const useGetAllQualityGateProjectsQuery = createQueryHook(
+  (data: Parameters<typeof getAllQualityGateProjects>[0]) => {
+    return queryOptions({
+      queryKey: qualityQuery.allProjectsSearch(data?.gateName ?? ''),
+      queryFn: () => {
+        return getAllQualityGateProjects(data);
+      },
+    });
+  },
+);
 
 export function useCreateQualityGateMutation() {
   const queryClient = useQueryClient();
@@ -160,6 +177,53 @@ export function useDeleteQualityGateMutation(name: string) {
       queryClient.invalidateQueries({ queryKey: qualityQuery.list() });
       queryClient.invalidateQueries({ queryKey: qualityQuery.projectsAssoc() });
       queryClient.removeQueries({ queryKey: qualityQuery.detail(name) });
+    },
+  });
+}
+
+export function useSetAiSupportedQualityGateMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      name,
+      isQualityGateAiSupported,
+    }: {
+      isQualityGateAiSupported: boolean;
+      name: string;
+    }) => {
+      return setQualityGateAiQualified(name, isQualityGateAiSupported);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qualityQuery.all() });
+    },
+  });
+}
+
+export function useAssociateGateWithProjectMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { gateName: string; projectKey: string }) => {
+      return associateGateWithProject(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qualityQuery.projectsAssoc() });
+      queryClient.invalidateQueries({ queryKey: ['project', 'list'] });
+    },
+  });
+}
+
+export function useDissociateGateWithProjectMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { projectKey: string }) => {
+      return dissociateGateWithProject(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qualityQuery.projectsAssoc() });
+      queryClient.invalidateQueries({ queryKey: ['project', 'list'] });
     },
   });
 }
@@ -317,3 +381,13 @@ export const useApplicationQualityGateStatus = createQueryHook(
     });
   },
 );
+
+/**
+ * @deprecated This is only for component that has not been migrated to react-query
+ */
+export function useInvalidateQualityGateQuery() {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: qualityQuery.all() });
+  };
+}

@@ -477,6 +477,7 @@ export interface QualityGate extends QualityGatePreview {
     copy?: boolean;
     delegate?: boolean;
     delete?: boolean;
+    manageAiCodeAssurance?: boolean;
     manageConditions?: boolean;
     rename?: boolean;
     setAsDefault?: boolean;
@@ -485,6 +486,7 @@ export interface QualityGate extends QualityGatePreview {
   conditions?: Condition[];
   hasMQRConditions?: boolean;
   hasStandardConditions?: boolean;
+  isAiCodeSupported?: boolean;
   isBuiltIn?: boolean;
 }
 

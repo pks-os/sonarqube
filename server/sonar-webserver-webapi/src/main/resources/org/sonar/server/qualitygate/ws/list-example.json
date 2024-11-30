@@ -11,11 +11,13 @@
         "associateProjects": false,
         "delete": false,
         "manageConditions": false,
-        "delegate": false
+        "delegate": false,
+        "manageAiCodeAssurance": false
       },
       "caycStatus": "compliant",
       "hasStandardConditions": false,
-      "hasMQRConditions": false
+      "hasMQRConditions": false,
+      "isAiCodeSupported": false
     },
     {
       "name": "Sonar way - Without Coverage",
@@ -28,11 +30,13 @@
         "associateProjects": true,
         "delete": true,
         "manageConditions": true,
-        "delegate": true
+        "delegate": true,
+        "manageAiCodeAssurance": true
       },
       "caycStatus": "non-compliant",
       "hasStandardConditions": false,
-      "hasMQRConditions": false
+      "hasMQRConditions": false,
+      "isAiCodeSupported": false
     }
   ],
   "actions": {

@@ -17,26 +17,10 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.server.platform.telemetry;
+package org.sonar.server.ai.code.assurance;
 
-import org.junit.jupiter.api.Test;
-import org.sonar.db.DbClient;
-import org.sonar.telemetry.core.Dimension;
-import org.sonar.telemetry.core.Granularity;
-import org.sonar.telemetry.core.TelemetryDataType;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-
-class ProjectCppAutoconfigTelemetryProviderTest {
-
-  @Test
-  void testGetters() {
-     ProjectCppAutoconfigTelemetryProvider provider = new ProjectCppAutoconfigTelemetryProvider(mock(DbClient.class));
-
-     assertEquals("project_cpp_config_type", provider.getMetricKey());
-     assertEquals(Dimension.PROJECT, provider.getDimension());
-     assertEquals(Granularity.WEEKLY, provider.getGranularity());
-     assertEquals(TelemetryDataType.STRING, provider.getType());
-  }
+public enum AiCodeAssurance {
+  CONTAINS_AI_CODE,
+  AI_CODE_ASSURED,
+  NONE
 }

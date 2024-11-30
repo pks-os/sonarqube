@@ -49,14 +49,16 @@ public class ListAction implements QualityGatesWsAction {
   private final QualityGateFinder finder;
   private final QualityGateCaycChecker qualityGateCaycChecker;
   private final QualityGateModeChecker qualityGateModeChecker;
+  private final QualityGateActionsSupport actionsSupport;
 
   public ListAction(DbClient dbClient, QualityGatesWsSupport wsSupport, QualityGateFinder finder, QualityGateCaycChecker qualityGateCaycChecker,
-    QualityGateModeChecker qualityGateModeChecker) {
+    QualityGateModeChecker qualityGateModeChecker, QualityGateActionsSupport actionsSupport) {
     this.dbClient = dbClient;
     this.wsSupport = wsSupport;
     this.finder = finder;
     this.qualityGateCaycChecker = qualityGateCaycChecker;
     this.qualityGateModeChecker = qualityGateModeChecker;
+    this.actionsSupport = actionsSupport;
   }
 
   @Override
@@ -66,6 +68,7 @@ public class ListAction implements QualityGatesWsAction {
       .setSince("4.3")
       .setResponseExample(Resources.getResource(this.getClass(), "list-example.json"))
       .setChangelog(
+        new Change("10.8", "'isAiCodeSupported' field is added on quality gate"),
         new Change("10.8", "'hasMQRConditions' and 'hasStandardConditions' fields are added on quality gate"),
         new Change("10.0", "Field 'default' in the response has been removed"),
         new Change("10.0", "Field 'id' in the response has been removed"),
@@ -101,10 +104,11 @@ public class ListAction implements QualityGatesWsAction {
             .setName(qualityGate.getName())
             .setIsDefault(qualityGate.getUuid().equals(defaultUuid))
             .setIsBuiltIn(qualityGate.isBuiltIn())
+            .setIsAiCodeSupported(actionsSupport.isAiCodeAssuranceEnabled() && qualityGate.isAiCodeSupported())
             .setCaycStatus(qualityGateCaycChecker.checkCaycCompliant(conditions, metrics).toString())
             .setHasMQRConditions(qualityModeResult.hasMQRConditions())
             .setHasStandardConditions(qualityModeResult.hasStandardConditions())
-            .setActions(wsSupport.getActions(dbSession, qualityGate, defaultQualityGate))
+            .setActions(actionsSupport.getActions(dbSession, qualityGate, defaultQualityGate))
             .build();
         })
         .toList());

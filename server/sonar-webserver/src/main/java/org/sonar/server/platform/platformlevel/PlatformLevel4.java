@@ -58,6 +58,7 @@ import org.sonar.core.language.LanguagesProvider;
 import org.sonar.core.metric.SoftwareQualitiesMetrics;
 import org.sonar.core.platform.PlatformEditionProvider;
 import org.sonar.core.platform.SpringComponentContainer;
+import org.sonar.server.ai.code.assurance.AiCodeAssuranceEntitlement;
 import org.sonar.server.ai.code.assurance.AiCodeAssuranceVerifier;
 import org.sonar.server.almintegration.ws.AlmIntegrationsWSModule;
 import org.sonar.server.almintegration.ws.CredentialsEncoderHelper;
@@ -188,7 +189,6 @@ import org.sonar.server.platform.PersistentSettings;
 import org.sonar.server.platform.SystemInfoWriterModule;
 import org.sonar.server.platform.WebCoreExtensionsInstaller;
 import org.sonar.server.platform.db.CheckAnyonePermissionsAtStartup;
-import org.sonar.server.platform.telemetry.ProjectCppAutoconfigTelemetryProvider;
 import org.sonar.server.platform.telemetry.TelemetryFipsEnabledProvider;
 import org.sonar.server.platform.telemetry.TelemetryMQRModePropertyProvider;
 import org.sonar.server.platform.telemetry.TelemetryNclocProvider;
@@ -344,6 +344,7 @@ public class PlatformLevel4 extends PlatformLevel {
 
       // ai code assurance
       AiCodeAssuranceVerifier.class,
+      AiCodeAssuranceEntitlement.class,
 
       // batch
       new BatchWsModule(),
@@ -674,7 +675,6 @@ public class PlatformLevel4 extends PlatformLevel {
       IndexersImpl.class,
 
       // new telemetry metrics
-      ProjectCppAutoconfigTelemetryProvider.class,
       TelemetryVersionProvider.class,
       TelemetryMQRModePropertyProvider.class,
       TelemetryNclocProvider.class,

@@ -42,6 +42,7 @@ const ui = {
   removeCondition: byRole('button', { name: /quality_gates.condition.delete/ }),
   listItem: byTestId('js-subnavigation-item'),
   requiresUpdateIndicator: byTestId('quality-gates-mqr-standard-mode-update-indicator'),
+  aiAssuranceIndicator: byTestId('quality-gates-ai-assurance-indicator'),
   qualityGateListItem: (qualityGateName: string) => byRole('link', { name: qualityGateName }),
   newConditionRow: byTestId('quality-gates__conditions-new').byRole('row'),
   overallConditionRow: byTestId('quality-gates__conditions-overall').byRole('row'),
@@ -232,12 +233,69 @@ it('should be able to set as default a quality gate which is CaYC compliant', as
   qualityGateHandler.setIsAdmin(true);
   renderQualityGateApp();
 
-  const notDefaultQualityGate = await screen.findByRole('button', { name: /Sonar way/ });
+  const notDefaultQualityGate = await screen.findByRole('button', {
+    name: /Sonar way for AI code/,
+  });
   await user.click(notDefaultQualityGate);
   await user.click(await screen.findByLabelText('actions'));
   const setAsDefaultButton = screen.getByRole('menuitem', { name: 'set_as_default' });
   await user.click(setAsDefaultButton);
-  expect(await screen.findByRole('button', { name: /Sonar way default/ })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('button', { name: /Sonar way for AI code default/ }),
+  ).toBeInTheDocument();
+});
+
+it('should be able to qualify/disqualify a quality gate for AI code assurance', async () => {
+  const user = userEvent.setup();
+  qualityGateHandler.setIsAdmin(true);
+  renderQualityGateApp();
+  await user.click(await screen.findByLabelText('actions'));
+  const qualifyButton = screen.getByRole('menuitem', {
+    name: 'quality_gates.actions.qualify_for_ai_code_assurance',
+  });
+  expect(qualifyButton).toBeInTheDocument();
+  await user.click(qualifyButton);
+
+  await user.click(await screen.findByLabelText('actions'));
+  const disqualifyButton = screen.getByRole('menuitem', {
+    name: 'quality_gates.actions.disqualify_for_ai_code_assurance',
+  });
+
+  expect(disqualifyButton).toBeInTheDocument();
+  await user.click(disqualifyButton);
+});
+
+it('should show confirmation when disqualifying a quality gate with projects having AI code', async () => {
+  const user = userEvent.setup();
+  qualityGateHandler.setIsAdmin(true);
+  renderQualityGateApp();
+
+  await user.click(await screen.findByText('SonarSource way - CFamily'));
+
+  await user.click(await screen.findByLabelText('actions'));
+  const qualifyButton = screen.getByRole('menuitem', {
+    name: 'quality_gates.actions.qualify_for_ai_code_assurance',
+  });
+  await user.click(qualifyButton);
+
+  await user.click(await screen.findByLabelText('actions'));
+  const disqualifyButton = screen.getByRole('menuitem', {
+    name: 'quality_gates.actions.disqualify_for_ai_code_assurance',
+  });
+
+  await user.click(disqualifyButton);
+
+  expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  await user.click(
+    screen.getByRole('button', { name: 'quality_gates.disqualify_ai_modal.confirm' }),
+  );
+
+  await user.click(await screen.findByLabelText('actions'));
+  expect(
+    screen.getByRole('menuitem', {
+      name: 'quality_gates.actions.qualify_for_ai_code_assurance',
+    }),
+  ).toBeInTheDocument();
 });
 
 it('should be able to add a condition on new code', async () => {
@@ -610,7 +668,7 @@ it('should not display CaYC condition simplification tour for users who dismisse
   expect(byRole('alertdialog').query()).not.toBeInTheDocument();
 });
 
-it('should advertise the Sonar way Quality Gate as AI-ready', async () => {
+it('should advertise the Sonar way for AI code Quality Gate as AI-ready', async () => {
   const user = userEvent.setup();
   qualityGateHandler.setIsAdmin(true);
   renderQualityGateApp({
@@ -620,13 +678,36 @@ it('should advertise the Sonar way Quality Gate as AI-ready', async () => {
     featureList: [Feature.AiCodeAssurance],
   });
 
-  await user.click(await screen.findByRole('link', { name: /Sonar way/ }));
+  await user.click(await screen.findByRole('link', { name: /Sonar way for AI code/ }));
 
   expect(
     await screen.findByRole('link', {
-      name: 'quality_gates.ai_generated.description.clean_ai_generated_code',
+      name: 'quality_gates.ai_generated.description.clean_ai_generated_code open_in_new_tab',
     }),
   ).toBeInTheDocument();
+  expect(await screen.findByText('quality_gates.is_built_in.ai.description')).toBeInTheDocument();
+});
+
+it('should show AI indicator for Sonar AI Way based in DE+ editions', async () => {
+  qualityGateHandler.setIsAdmin(true);
+  renderQualityGateApp({
+    currentUser: mockLoggedInUser(),
+    featureList: [Feature.AiCodeAssurance],
+  });
+
+  expect(await ui.aiAssuranceIndicator.find()).toBeInTheDocument();
+});
+
+it('should not show AI indicator for Sonar AI Way based in Community editions', async () => {
+  qualityGateHandler.setIsAdmin(true);
+  renderQualityGateApp({
+    currentUser: mockLoggedInUser(),
+    featureList: [],
+  });
+
+  await screen.findByText('Sonar way');
+
+  expect(ui.aiAssuranceIndicator.query()).not.toBeInTheDocument();
 });
 
 it('should not allow to change value of prioritized_rule_issues', async () => {
@@ -696,7 +777,7 @@ describe('The Project section', () => {
     await user.click(notDefaultQualityGate);
 
     // by default it shows "selected" values
-    expect(await screen.findAllByRole('checkbox')).toHaveLength(3);
+    expect(await screen.findAllByRole('checkbox')).toHaveLength(4);
 
     // change tabs to show deselected projects
     await user.click(screen.getByRole('radio', { name: 'quality_gates.projects.without' }));
@@ -704,7 +785,7 @@ describe('The Project section', () => {
 
     // change tabs to show all projects
     await user.click(screen.getByRole('radio', { name: 'quality_gates.projects.all' }));
-    expect(screen.getAllByRole('checkbox')).toHaveLength(6);
+    expect(screen.getAllByRole('checkbox')).toHaveLength(7);
   });
 
   it('should handle select and deselect correctly', async () => {
@@ -716,7 +797,7 @@ describe('The Project section', () => {
 
     await user.click(notDefaultQualityGate);
 
-    expect(await screen.findAllByRole('checkbox')).toHaveLength(3);
+    expect(await screen.findAllByRole('checkbox')).toHaveLength(4);
     const checkedProjects = screen.getAllByRole('checkbox')[0];
     await user.click(checkedProjects);
     const reloadButton = screen.getByRole('button', { name: 'reload' });
@@ -725,14 +806,13 @@ describe('The Project section', () => {
 
     // FP
     // eslint-disable-next-line jest-dom/prefer-in-document
-    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    expect(screen.getAllByRole('checkbox')).toHaveLength(3);
 
-    // projects with disabled as true are not selectable
-    // last checked project in mock service is disabled
+    // Show ai code assurance project
     const disabledCheckedProjects = screen.getByRole('checkbox', {
       name: 'test5 test5 quality_gates.projects.ai_assured_message',
     });
-    expect(disabledCheckedProjects).toBeDisabled();
+    expect(disabledCheckedProjects).toBeInTheDocument();
 
     // change tabs to show deselected projects
     await user.click(screen.getByRole('radio', { name: 'quality_gates.projects.without' }));
@@ -744,26 +824,9 @@ describe('The Project section', () => {
     await user.click(reloadButton);
     expect(screen.getAllByRole('checkbox')).toHaveLength(3);
 
-    // projects with disabled as true are not selectable
-    // last unchecked project in mock service is disabled
-    const disabledUncheckedProjects = screen.getByRole('checkbox', {
-      name: 'test6 test6 quality_gates.projects.ai_assured_message',
-    });
-    expect(disabledUncheckedProjects).toBeDisabled();
-
     // change tabs to show all projects
     await user.click(screen.getByRole('radio', { name: 'quality_gates.projects.all' }));
-    expect(screen.getAllByRole('checkbox')).toHaveLength(6);
-
-    const disabledCheckedProjectsAll = screen.getByRole('checkbox', {
-      name: 'test5 test5 quality_gates.projects.ai_assured_message',
-    });
-    expect(disabledCheckedProjectsAll).toBeDisabled();
-
-    const disabledUncheckedProjectsAll = screen.getByRole('checkbox', {
-      name: 'test6 test6 quality_gates.projects.ai_assured_message',
-    });
-    expect(disabledUncheckedProjectsAll).toBeDisabled();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(7);
   });
 
   it('should handle the search of projects', async () => {
@@ -936,7 +999,7 @@ describe('Mode transition', () => {
       const user = userEvent.setup();
       renderQualityGateApp();
 
-      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(await ui.listItem.findAll()).toHaveLength(10);
       expect(ui.requiresUpdateIndicator.query()).not.toBeInTheDocument();
       await user.click(ui.qualityGateListItem('SonarSource way default').get());
       expect(byText('quality_gates.cayc.banner.title').get()).toBeInTheDocument();
@@ -950,7 +1013,7 @@ describe('Mode transition', () => {
       qualityGateHandler.setIsAdmin(true);
       renderQualityGateApp();
 
-      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(await ui.listItem.findAll()).toHaveLength(10);
       expect(
         ui.qualityGateListItem('SonarSource way default').by(ui.requiresUpdateIndicator).get(),
       ).toBeInTheDocument();
@@ -966,7 +1029,7 @@ describe('Mode transition', () => {
       qualityGateHandler.setIsAdmin(true);
       renderQualityGateApp();
 
-      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(await ui.listItem.findAll()).toHaveLength(10);
       await user.click(ui.qualityGateListItem('SonarSource way default').get());
 
       await user.click(ui.batchUpdate.get());
@@ -1014,7 +1077,7 @@ describe('Mode transition', () => {
       qualityGateHandler.setIsAdmin(true);
       renderQualityGateApp();
 
-      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(await ui.listItem.findAll()).toHaveLength(10);
       await user.click(ui.qualityGateListItem('QG without new code conditions').get());
       await user.click(await ui.addConditionButton.find());
 
@@ -1047,7 +1110,7 @@ describe('Mode transition', () => {
       const user = userEvent.setup();
       renderQualityGateApp();
 
-      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(await ui.listItem.findAll()).toHaveLength(10);
       expect(ui.requiresUpdateIndicator.query()).not.toBeInTheDocument();
       await user.click(ui.qualityGateListItem('QG with MQR conditions').get());
       expect(ui.batchUpdate.query()).not.toBeInTheDocument();
@@ -1060,7 +1123,7 @@ describe('Mode transition', () => {
       qualityGateHandler.setIsAdmin(true);
       renderQualityGateApp();
 
-      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(await ui.listItem.findAll()).toHaveLength(10);
       expect(
         ui.qualityGateListItem('QG with MQR conditions').by(ui.requiresUpdateIndicator).get(),
       ).toBeInTheDocument();
@@ -1075,7 +1138,7 @@ describe('Mode transition', () => {
       qualityGateHandler.setIsAdmin(true);
       renderQualityGateApp();
 
-      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(await ui.listItem.findAll()).toHaveLength(10);
       await user.click(ui.qualityGateListItem('QG with MQR conditions').get());
 
       await user.click(ui.batchUpdate.get());
@@ -1126,7 +1189,7 @@ describe('Mode transition', () => {
       qualityGateHandler.setIsAdmin(true);
       renderQualityGateApp();
 
-      expect(await ui.listItem.findAll()).toHaveLength(9);
+      expect(await ui.listItem.findAll()).toHaveLength(10);
       await user.click(ui.qualityGateListItem('QG with MQR conditions').get());
       await user.click(await ui.addConditionButton.find());
 

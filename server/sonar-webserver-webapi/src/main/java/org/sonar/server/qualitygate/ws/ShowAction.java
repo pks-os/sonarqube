@@ -52,14 +52,16 @@ public class ShowAction implements QualityGatesWsAction {
   private final QualityGatesWsSupport wsSupport;
   private final QualityGateCaycChecker qualityGateCaycChecker;
   private final QualityGateModeChecker qualityGateModeChecker;
+  private final QualityGateActionsSupport actionsSupport;
 
   public ShowAction(DbClient dbClient, QualityGateFinder qualityGateFinder, QualityGatesWsSupport wsSupport, QualityGateCaycChecker qualityGateCaycChecker,
-    QualityGateModeChecker qualityGateModeChecker) {
+    QualityGateModeChecker qualityGateModeChecker, QualityGateActionsSupport actionsSupport) {
     this.dbClient = dbClient;
     this.qualityGateFinder = qualityGateFinder;
     this.wsSupport = wsSupport;
     this.qualityGateCaycChecker = qualityGateCaycChecker;
     this.qualityGateModeChecker = qualityGateModeChecker;
+    this.actionsSupport = actionsSupport;
   }
 
   @Override
@@ -70,6 +72,7 @@ public class ShowAction implements QualityGatesWsAction {
       .setSince("4.3")
       .setResponseExample(Resources.getResource(this.getClass(), "show-example.json"))
       .setChangelog(
+        new Change("10.8", "'isAiCodeSupported' field is added on quality gate"),
         new Change("10.8", "'hasMQRConditions' and 'hasStandardConditions' fields are added on quality gate"),
         new Change("10.3", "'isDefault' field is added to the response"),
         new Change("10.0", "Field 'id' in the response has been removed"),
@@ -118,6 +121,7 @@ public class ShowAction implements QualityGatesWsAction {
     return ShowWsResponse.newBuilder()
       .setName(qualityGate.getName())
       .setIsBuiltIn(qualityGate.isBuiltIn())
+      .setIsAiCodeSupported(actionsSupport.isAiCodeAssuranceEnabled() && qualityGate.isAiCodeSupported())
       .setIsDefault(qualityGate.getUuid().equals(defaultQualityGate.getUuid()))
       .setCaycStatus(caycStatus.toString())
       .setHasMQRConditions(qualityModeResult.hasMQRConditions())
@@ -125,7 +129,7 @@ public class ShowAction implements QualityGatesWsAction {
       .addAllConditions(conditions.stream()
         .map(toWsCondition(metricsByUuid))
         .toList())
-      .setActions(wsSupport.getActions(dbSession, qualityGate, defaultQualityGate))
+      .setActions(actionsSupport.getActions(dbSession, qualityGate, defaultQualityGate))
       .build();
   }
 
