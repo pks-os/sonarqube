@@ -17,27 +17,29 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.server.platform.telemetry;
+package org.sonar.server.notification.email.telemetry;
 
-import java.util.Optional;
+import java.util.Map;
 import org.sonar.db.DbClient;
-import org.sonar.db.property.PropertyDto;
+import org.sonar.db.DbSession;
 import org.sonar.telemetry.core.AbstractTelemetryDataProvider;
 import org.sonar.telemetry.core.Dimension;
 import org.sonar.telemetry.core.Granularity;
 import org.sonar.telemetry.core.TelemetryDataType;
 
-public class TelemetryPortfolioConfidentialFlagProvider extends AbstractTelemetryDataProvider<Boolean> {
+public class TelemetryProjectSubscriptionsProvider extends AbstractTelemetryDataProvider<Integer> {
+  private static final String METRIC_KEY = "project_report_pdf_subscriptions";
   private final DbClient dbClient;
 
-  public TelemetryPortfolioConfidentialFlagProvider(DbClient dbClient) {
-    super("portfolio_reports_confidential_flag", Dimension.INSTALLATION, Granularity.WEEKLY, TelemetryDataType.BOOLEAN);
+  public TelemetryProjectSubscriptionsProvider(DbClient dbClient) {
+    super(METRIC_KEY, Dimension.PROJECT, Granularity.DAILY, TelemetryDataType.INTEGER);
     this.dbClient = dbClient;
   }
 
   @Override
-  public Optional<Boolean> getValue() {
-    PropertyDto property = dbClient.propertiesDao().selectGlobalProperty("sonar.portfolios.confidential.header");
-    return property == null ? Optional.of(true) : Optional.of(Boolean.valueOf(property.getValue()));
+  public Map<String, Integer> getValues() {
+    try (DbSession dbSession = dbClient.openSession(false)) {
+      return dbClient.reportSubscriptionDao().countPerProject(dbSession);
+    }
   }
 }

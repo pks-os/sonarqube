@@ -182,6 +182,8 @@ import org.sonar.server.notification.NotificationModule;
 import org.sonar.server.notification.email.telemetry.EmailConfigAuthMethodTelemetryProvider;
 import org.sonar.server.notification.email.telemetry.EmailConfigHostTelemetryProvider;
 import org.sonar.server.notification.email.telemetry.TelemetryApplicationSubscriptionsProvider;
+import org.sonar.server.notification.email.telemetry.TelemetryPortfolioSubscriptionsProvider;
+import org.sonar.server.notification.email.telemetry.TelemetryProjectSubscriptionsProvider;
 import org.sonar.server.notification.ws.NotificationWsModule;
 import org.sonar.server.permission.index.PermissionIndexer;
 import org.sonar.server.permission.ws.PermissionsWsModule;
@@ -193,7 +195,6 @@ import org.sonar.server.platform.db.CheckAnyonePermissionsAtStartup;
 import org.sonar.server.platform.telemetry.TelemetryFipsEnabledProvider;
 import org.sonar.server.platform.telemetry.TelemetryMQRModePropertyProvider;
 import org.sonar.server.platform.telemetry.TelemetryNclocProvider;
-import org.sonar.server.platform.telemetry.TelemetryPortfolioConfidentialFlagProvider;
 import org.sonar.server.platform.telemetry.TelemetryUserEnabledProvider;
 import org.sonar.server.platform.telemetry.TelemetryVersionProvider;
 import org.sonar.server.platform.web.ActionDeprecationLoggerInterceptor;
@@ -681,10 +682,11 @@ public class PlatformLevel4 extends PlatformLevel {
       TelemetryNclocProvider.class,
       TelemetryUserEnabledProvider.class,
       TelemetryFipsEnabledProvider.class,
-      TelemetryPortfolioConfidentialFlagProvider.class,
 
       // Reports telemetry
       TelemetryApplicationSubscriptionsProvider.class,
+      TelemetryProjectSubscriptionsProvider.class,
+      TelemetryPortfolioSubscriptionsProvider.class,
 
       // telemetry
       TelemetryMetricsLoader.class,
