@@ -228,6 +228,7 @@ subprojects {
   ext {
     protobufVersion = '4.29.0'
     springVersion = '6.2.1'
+    springSecurityVersion = '6.4.1'
     elasticSearchClientVersion = '7.17.25'
   }
 
@@ -384,7 +385,6 @@ subprojects {
       dependency('com.microsoft.sqlserver:mssql-jdbc:12.8.1.jre11') {
         exclude 'com.fasterxml.jackson.core:jackson-databind'
       }
-      dependency 'com.onelogin:java-saml:2.9.0'
       dependency 'com.oracle.database.jdbc:ojdbc11:23.6.0.24.10'
       dependency 'com.datadoghq:dd-java-agent:1.30.1'
       dependency 'org.aspectj:aspectjtools:1.9.22.1'
@@ -490,6 +490,7 @@ subprojects {
         }
       }
       dependency "org.springframework:spring-test:${springVersion}"
+      dependency "org.springframework.security:spring-security-saml2-service-provider:${springSecurityVersion}"
       dependency 'org.mybatis:mybatis:3.5.17'
       dependencySet(group: 'org.slf4j', version: '2.0.16') {
         entry 'jcl-over-slf4j'

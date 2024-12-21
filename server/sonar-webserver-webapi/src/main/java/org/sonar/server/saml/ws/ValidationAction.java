@@ -91,7 +91,9 @@ public class ValidationAction extends HttpFilter implements SamlAction {
 
     response.setContentType("text/html");
 
-    String htmlResponse = samlAuthenticator.getAuthenticationStatusPage(new JakartaHttpRequest(httpRequest), response);
+
+
+    String htmlResponse = samlAuthenticator.getAuthenticationStatusPage(new JakartaHttpRequest(httpRequest));
     String nonce = SamlValidationCspHeaders.addCspHeadersWithNonceToResponse(response);
     htmlResponse = htmlResponse.replace("%NONCE%", nonce);
     response.getWriter().print(htmlResponse);

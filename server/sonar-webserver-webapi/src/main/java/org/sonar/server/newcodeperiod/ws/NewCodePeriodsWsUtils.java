@@ -17,35 +17,20 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.db.measure;
+package org.sonar.server.newcodeperiod.ws;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import java.util.Map;
-import java.util.TreeMap;
+import org.sonar.core.documentation.DocumentationLinkGenerator;
 
-public class ProjectMainBranchMeasureDto {
+import static org.sonar.server.ws.WsUtils.createHtmlExternalLink;
 
-  private static final Gson GSON = new Gson();
+public class NewCodePeriodsWsUtils {
+  public static final String DOCUMENTATION_LINK = "/project-administration/setting-up-clean-as-you-code/#setting-a-new-code-definition";
 
-  private String projectUuid;
-  private Map<String, Object> metricValues = new TreeMap<>();
-
-  public ProjectMainBranchMeasureDto() {
-    // empty constructor
+  private NewCodePeriodsWsUtils() {
+    // do nothing
   }
 
-  public String getProjectUuid() {
-    return projectUuid;
-  }
-
-  public Map<String, Object> getMetricValues() {
-    return metricValues;
-  }
-
-  // used by MyBatis mapper
-  public void setJsonValue(String jsonValue) {
-    metricValues = GSON.fromJson(jsonValue, new TypeToken<TreeMap<String, Object>>() {
-    }.getType());
+  public static String createNewCodePeriodHtmlLink(DocumentationLinkGenerator documentationLinkGenerator){
+    return createHtmlExternalLink(documentationLinkGenerator.getDocumentationLink(DOCUMENTATION_LINK), "new code definition");
   }
 }

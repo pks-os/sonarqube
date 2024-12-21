@@ -17,11 +17,23 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.db.measure;
+package org.sonar.auth.saml;
 
-/**
- * Loc distribution per language for the largest branch in a project.
- */
-public record ProjectLocDistributionDto(String projectUuid, String branchUuid, String locDistribution) {
+import org.junit.jupiter.api.Test;
+import org.springframework.security.saml2.provider.service.authentication.OpenSaml4AuthenticationProvider;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+
+class SamlConfigurationTest {
+
+  @Test
+  void openSaml4AuthenticationProvider_doesNotFail() {
+    SamlConfiguration samlConfiguration = new SamlConfiguration();
+    SonarqubeSaml2ResponseValidator sonarqubeSaml2ResponseValidator = mock();
+
+    OpenSaml4AuthenticationProvider openSaml4AuthenticationProvider = samlConfiguration.openSaml4AuthenticationProvider(sonarqubeSaml2ResponseValidator);
+
+    assertThat(openSaml4AuthenticationProvider).isNotNull();
+  }
 }
