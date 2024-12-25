@@ -114,6 +114,9 @@ allprojects {
       maven {
         url 'https://maven.codelibs.org/'
       }
+      maven {
+        url 'https://build.shibboleth.net/nexus/content/repositories/releases/'
+      }
     }
     ivy {
       if (artifactoryUsername && artifactoryPassword) {
@@ -278,7 +281,7 @@ subprojects {
   dependencyManagement {
     dependencies {
       // bundled plugin list -- keep it alphabetically ordered
-      dependency 'com.sonarsource.abap:sonar-abap-plugin:3.15.0.5980'
+      dependency 'com.sonarsource.abap:sonar-abap-plugin:3.15.1.6010'
       dependency 'com.sonarsource.cobol:sonar-cobol-plugin:5.8.0.8309'
       dependency 'com.sonarsource.cpp:sonar-cfamily-dependencies-plugin:6.62.0.78645'
       dependency 'com.sonarsource.cpp:sonar-cfamily-plugin:6.62.0.78645'
@@ -332,14 +335,14 @@ subprojects {
       dependency "org.sonarsource.sonarqube:webapp-assets:$webappVersion"
 
       // please keep this list alphabetically ordered
-      dependencySet(group: 'ch.qos.logback', version: '1.5.6') {
+      dependencySet(group: 'ch.qos.logback', version: '1.5.13') {
         entry 'logback-classic'
         entry 'logback-core'
       }
 
       // https://mvnrepository.com/artifact/ch.qos.logback.access/common
       dependency('ch.qos.logback.access:common:2.0.3')
-      dependency('ch.qos.logback.access:logback-access-tomcat:2.0.4')
+      dependency('ch.qos.logback.access:logback-access-tomcat:2.0.5')
       dependency('commons-beanutils:commons-beanutils:1.9.4') {
         exclude 'commons-logging:commons-logging'
       }
