@@ -17,33 +17,33 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-package org.sonar.server.telemetry;
+package org.sonar.db.migrationlog;
 
-import java.util.Optional;
-import org.sonar.telemetry.core.AbstractTelemetryDataProvider;
-import org.sonar.telemetry.core.Dimension;
-import org.sonar.telemetry.core.Granularity;
-import org.sonar.telemetry.core.TelemetryDataType;
+import java.util.Collection;
+import java.util.List;
+import org.sonar.db.Dao;
+import org.sonar.db.DbSession;
 
-public class TelemetryDbMigrationSuccessProvider extends AbstractTelemetryDataProvider<Boolean> {
+public class MigrationLogDao implements Dao {
 
-  private Boolean dbMigrationSuccess = null;
+  public MigrationLogDto insert(DbSession session, MigrationLogDto dto) {
+    mapper(session).insert(dto);
 
-  public TelemetryDbMigrationSuccessProvider() {
-    super("db_migration_success", Dimension.INSTALLATION, Granularity.ADHOC, TelemetryDataType.BOOLEAN);
+    return dto;
   }
 
-  public void setDbMigrationSuccess(Boolean dbMigrationSuccess) {
-    this.dbMigrationSuccess = dbMigrationSuccess;
+  public void insert(DbSession session, Collection<MigrationLogDto> items) {
+    for (MigrationLogDto item : items) {
+      insert(session, item);
+    }
   }
 
-  @Override
-  public Optional<Boolean> getValue() {
-    return Optional.ofNullable(dbMigrationSuccess);
+  public List<MigrationLogDto> selectAll(DbSession session) {
+    return mapper(session).selectAll();
   }
 
-  @Override
-  public void after() {
-    dbMigrationSuccess = null;
+  private static MigrationLogMapper mapper(DbSession session) {
+    return session.getMapper(MigrationLogMapper.class);
   }
+
 }
