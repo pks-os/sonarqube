@@ -1,6 +1,6 @@
 /*
  * SonarQube
- * Copyright (C) 2009-2024 SonarSource SA
+ * Copyright (C) 2009-2025 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -556,7 +556,7 @@ public class ComponentTreeAction implements MeasuresWsAction {
 
   private List<MetricDto> searchMetrics(DbSession dbSession, Set<String> metricKeys) {
     List<MetricDto> metrics = dbClient.metricDao().selectByKeys(dbSession, metricKeys);
-    if (metrics.size() < metricKeys.size()) {
+    if (metrics.size() < metricKeys.stream().filter(key -> !key.equals("contains_ai_code")).count()) {
       List<String> foundMetricKeys = Lists.transform(metrics, MetricDto::getKey);
       Set<String> missingMetricKeys = Sets.difference(
         new LinkedHashSet<>(metricKeys),

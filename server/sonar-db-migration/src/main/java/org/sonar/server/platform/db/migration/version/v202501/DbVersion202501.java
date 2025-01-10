@@ -1,6 +1,6 @@
 /*
  * SonarQube
- * Copyright (C) 2009-2024 SonarSource SA
+ * Copyright (C) 2009-2025 SonarSource SA
  * mailto:info AT sonarsource DOT com
  *
  * This program is free software; you can redistribute it and/or
@@ -46,6 +46,10 @@ public class DbVersion202501 implements DbVersion {
       .add(2025_01_006, "Add 'detected_ai_code' column to 'projects' table", AddDetectedAICodeColumnToProjectsTable.class)
       .add(2025_01_007, "Create table 'migration_logs'", CreateMigrationLogsTable.class)
       .add(2025_01_008, "Log message if SAML configuration is not valid", LogMessageIfInvalidSamlSetup.class)
+      .add(2025_01_009, "Add 'inline_annotations_enabled' column to 'project_alm_settings' table", AddInlineAnnotationsEnabledColumnToProjectAlmSettingsTable.class)
+      .add(2025_01_010, "Populate 'inline_annotations_enabled' column for Azure", PopulateInlineAnnotationsEnabledColumnForAzure.class)
+      .add(2025_01_011, "Update default admin password if still hashed with BCRYPT", UpdateDefaultAdminPasswordIfInvalidHashMechanism.class)
+      .add(2025_01_012, "Log message if users are still relying on BCRYPT hashed passwords", LogMessageIfInvalidHashMechanismUsed.class)
     ;
   }
 }
